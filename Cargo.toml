@@ -1,0 +1,8 @@
+[package]
+name = "smtpd-rs"
+version = "0.1.0"
+authors = ["Kei NIKADO <nikado.kei@gmail.com>"]
+
+[dependencies]
+hostname = "^0.1"
+bufstream = "^0.1"
