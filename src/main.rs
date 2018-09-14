@@ -14,11 +14,9 @@ fn main() {
 
     let listener = TcpListener::bind("127.0.0.1:8025").unwrap();
     let (_, recv): (Sender<String>, Receiver<String>) = mpsc::channel();
-    spawn(move || {
-        loop {
-            let msg = recv.recv().unwrap();
-            print!("DEBUG: msg {}", msg);
-        }
+    spawn(move || loop {
+        let msg = recv.recv().unwrap();
+        print!("DEBUG: msg {}", msg);
     });
           
     for stream in listener.incoming() {
@@ -64,6 +62,28 @@ fn handle_client(stream: &mut BufStream<TcpStream>) {
     }
 }
 
+fn dispatch(command: String) -> Result<(), ()> {
+    let mut iter = command.split_whitespace();
+    let method = iter.next();
+    
+    match method {
+        Some("HELO") => {
+            let peer_hostname = iter.next();
+            println!("HELO {:?}", peer_hostname);
+        }
+        Some("EHLO") => {
+            let peer_hostname = iter.next();
+            println!("HELO {:?}", peer_hostname);
+        }
+        Some("QUIT") => {
+            println!("QUIT");
+            print!("221 2.0.0 closing connection smtpd-rs");
+        }
+        _ => panic!("error"),
+    }
+    Ok(())
+}
+
 fn print_error(mut err: &Error) {
     let _ = writeln!(stderr(), "error: {}", err);
     while let Some(cause) = err.cause() {
@@ -72,3 +92,7 @@ fn print_error(mut err: &Error) {
     }
 }
 
+#[test]
+fn test_dispatch() {
+    assert_eq!(dispatch(String::from("QUIT")), Ok(()));
+}
