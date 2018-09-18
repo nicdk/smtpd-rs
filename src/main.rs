@@ -43,23 +43,7 @@ fn handle_client(stream: &mut BufStream<TcpStream>) {
         panic!("error: {}", err);
     }
 
-    let mut iter = first_line.split_whitespace();
-    let method = iter.next();
-    match method {
-        Some("HELO") => {
-            let peer_hostname = iter.next();
-            println!("HELO {:?}", peer_hostname);
-        }
-        Some("EHLO") => {
-            let peer_hostname = iter.next();
-            println!("HELO {:?}", peer_hostname);
-        }
-        Some("QUIT") => {
-            println!("QUIT");
-            print!("221 2.0.0 closing connection smtpd-rs");
-        }
-        _ => panic!("error"),
-    }
+    dispatch(first_line).unwrap()
 }
 
 fn dispatch(command: String) -> Result<(), ()> {
@@ -77,9 +61,12 @@ fn dispatch(command: String) -> Result<(), ()> {
         }
         Some("QUIT") => {
             println!("QUIT");
-            print!("221 2.0.0 closing connection smtpd-rs");
+            print!(r"221 2.0.0 closing connection smtpd-rs");
         }
-        _ => panic!("error"),
+        _ => {
+            println!("error");
+            println!(r"502 5.5.1 Unrecognized command. w31-v6si6176415pla.133 - smtpd-rs");
+        }
     }
     Ok(())
 }
@@ -94,5 +81,6 @@ fn print_error(mut err: &Error) {
 
 #[test]
 fn test_dispatch() {
+    assert_eq!(dispatch(String::from("QUIT")), Ok(()));
     assert_eq!(dispatch(String::from("QUIT")), Ok(()));
 }
