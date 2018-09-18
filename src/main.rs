@@ -53,19 +53,41 @@ fn dispatch(command: String) -> Result<(), ()> {
     match method {
         Some("HELO") => {
             let peer_hostname = iter.next();
-            println!("HELO {:?}", peer_hostname);
+            println!("{:?}", peer_hostname);
+            ()
         }
         Some("EHLO") => {
             let peer_hostname = iter.next();
-            println!("HELO {:?}", peer_hostname);
+            println!("{:?}", peer_hostname);
+            ()
+        }
+        Some("MAIL FROM:") => {
+            let from_address = iter.next();
+            println!("{:?}", from_address);
+            ()
+        }
+        Some("RCPT TO:") => {
+            let rcpt_address = iter.next();
+            println!("{:?}", rcpt_address);
+            ()
+        }
+        Some("DATA") => {
+            ()
+        }
+        Some(".") => {
+            ()
+        }
+        Some("RSET") => {
+            ()
         }
         Some("QUIT") => {
             println!("QUIT");
             print!(r"221 2.0.0 closing connection smtpd-rs");
+            ()
         }
         _ => {
             println!("error");
-            println!(r"502 5.5.1 Unrecognized command. w31-v6si6176415pla.133 - smtpd-rs");
+            ()
         }
     }
     Ok(())
@@ -82,5 +104,11 @@ fn print_error(mut err: &Error) {
 #[test]
 fn test_dispatch() {
     assert_eq!(dispatch(String::from("QUIT")), Ok(()));
-    assert_eq!(dispatch(String::from("QUIT")), Ok(()));
+    assert_eq!(dispatch(String::from("HELO localhost")), Ok(()));
+    assert_eq!(dispatch(String::from("EHLO localhost")), Ok(()));
+    assert_eq!(dispatch(String::from("MAIL FROM:postmaster@example.com")), Ok(()));
+    assert_eq!(dispatch(String::from("RCPT TO:postmaster@example.com")), Ok(()));
+    assert_eq!(dispatch(String::from("DATA")), Ok(()));
+    assert_eq!(dispatch(String::from(".")), Ok(()));
+    assert_eq!(dispatch(String::from("RSET")), Ok(()));
 }
