@@ -2,40 +2,37 @@ extern crate hostname;
 extern crate bufstream;
 
 use std::error::Error;
-use std::thread::spawn;
-use std::io::{Write,BufRead,stderr};
 use std::net::{TcpListener,TcpStream};
+use std::io;
+use std::io::{Write,BufRead,stderr};
+use std::thread::spawn;
 use bufstream::BufStream;
-use std::sync::mpsc;
-use std::sync::mpsc::{Sender,Receiver};
 
 fn main() {
-    println!("Hello, world!");
+    smtpd_main("127.0.0.1:8025").expect("error: ");
+}
 
-    let listener = TcpListener::bind("127.0.0.1:8025").unwrap();
-    let (_, recv): (Sender<String>, Receiver<String>) = mpsc::channel();
-    spawn(move || loop {
-        let msg = recv.recv().unwrap();
-        print!("DEBUG: msg {}", msg);
-    });
-          
-    for stream in listener.incoming() {
-        match stream {
-            Err(_) => panic!("listen error"),
-            Ok(mut stream) => {
-                println!("connection from {} to {}", stream.peer_addr().unwrap(), stream.local_addr().unwrap());
-                spawn(move || {
-                    let mut stream = BufStream::new(stream);
-                    handle_client(&mut stream)
-                });
+fn smtpd_main(addr: &str) -> io::Result<()> {
+    let listener = TcpListener::bind(addr)?;
+    println!("smtpd-rs: listening on {}", addr);
+    listener.set_ttl(100).expect("could not set TTL");
+    
+    loop {
+        let (stream, c_addr) = listener.accept()?;
+        println!("connection received from {}", c_addr);
+
+        spawn(move || {
+            let mut smtp_stream = BufStream::new(stream);
+            loop {
+                handle_client(&mut smtp_stream).err();
             }
-        }
+        });
     }
 }
 
-fn handle_client(stream: &mut BufStream<TcpStream>) {
-    stream.write(b"220 hostname ESMTP smtpd-rs\n").unwrap();
-    stream.flush().unwrap();
+fn handle_client(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
+    stream.write(b"220 hostname ESMTP smtpd-rs\n")?;
+    stream.flush()?;
     
     let mut first_line = String::new();
     if let Err(err) = stream.read_line(&mut first_line) {
@@ -43,10 +40,12 @@ fn handle_client(stream: &mut BufStream<TcpStream>) {
         panic!("error: {}", err);
     }
 
-    dispatch(first_line).unwrap()
+    let _message = dispatch(first_line)?;
+    stream.write(b"220 hostname ESMTP smtpd-rs\n").unwrap();
+    Ok(())
 }
 
-fn dispatch(command: String) -> Result<(), ()> {
+fn dispatch(command: String) -> io::Result<String> {
     let mut iter = command.split_whitespace();
     let method = iter.next();
     
@@ -54,43 +53,42 @@ fn dispatch(command: String) -> Result<(), ()> {
         Some("HELO") => {
             let peer_hostname = iter.next();
             println!("{:?}", peer_hostname);
-            ()
+            let reply = format!(r"250 ok at your service");
+            Ok(reply)
         }
         Some("EHLO") => {
             let peer_hostname = iter.next();
             println!("{:?}", peer_hostname);
-            ()
+            let reply = format!(r"250 ok at your service");
+            Ok(reply)
         }
         Some("MAIL FROM:") => {
             let from_address = iter.next();
             println!("{:?}", from_address);
-            ()
+            Ok(r"250 2.1.0 OK - smtpd-rs".to_string())
         }
         Some("RCPT TO:") => {
             let rcpt_address = iter.next();
             println!("{:?}", rcpt_address);
-            ()
+            Ok(r"250 2.1.0 OK - smtpd-rs".to_string())
         }
         Some("DATA") => {
-            ()
+            Ok(r"250 2.1.0 OK - smtpd-rs".to_string())
         }
         Some(".") => {
-            ()
+            Ok(r"250 2.1.0 OK - smtpd-rs".to_string())
         }
         Some("RSET") => {
-            ()
+            Ok(r"250 2.1.0 OK - smtpd-rs".to_string())
         }
         Some("QUIT") => {
-            println!("QUIT");
-            print!(r"221 2.0.0 closing connection smtpd-rs");
-            ()
+            Ok(r"221 2.0.0 closing connection smtpd-rs".to_string())
         }
         _ => {
             println!("error");
-            ()
+            Ok(r"555 5.5.2 Syntax error. - smtpd-rs".to_string())
         }
     }
-    Ok(())
 }
 
 fn print_error(mut err: &Error) {
@@ -102,13 +100,17 @@ fn print_error(mut err: &Error) {
 }
 
 #[test]
+fn test_handle_client() {
+}
+
+#[test]
 fn test_dispatch() {
-    assert_eq!(dispatch(String::from("QUIT")), Ok(()));
-    assert_eq!(dispatch(String::from("HELO localhost")), Ok(()));
-    assert_eq!(dispatch(String::from("EHLO localhost")), Ok(()));
-    assert_eq!(dispatch(String::from("MAIL FROM:postmaster@example.com")), Ok(()));
-    assert_eq!(dispatch(String::from("RCPT TO:postmaster@example.com")), Ok(()));
-    assert_eq!(dispatch(String::from("DATA")), Ok(()));
-    assert_eq!(dispatch(String::from(".")), Ok(()));
-    assert_eq!(dispatch(String::from("RSET")), Ok(()));
+    assert_eq!(dispatch("QUIT".to_string()).ok(), Some(r"221 2.0.0 closing connection smtpd-rs".to_string()));
+    assert_eq!(dispatch("HELO localhost".to_string()).ok(), Some(r"250 ok at your service".to_string()));
+    assert_eq!(dispatch("EHLO localhost".to_string()).ok(), Some(r"250 ok at your service".to_string()));
+    // assert_eq!(dispatch("MAIL FROM:postmaster@example.com".to_string()).ok(), Some(r"250 2.1.0 OK - smtpd-rs".to_string()));
+    // assert_eq!(dispatch("RCPT TO:postmaster@example.com".to_string()).ok(), Some(r"250 2.1.0 OK - smtpd-rs".to_string()));
+    assert_eq!(dispatch("DATA".to_string()).ok(), Some(r"250 2.1.0 OK - smtpd-rs".to_string()));
+    assert_eq!(dispatch(".".to_string()).ok(), Some(r"250 2.1.0 OK - smtpd-rs".to_string()));
+    assert_eq!(dispatch("RSET".to_string()).ok(), Some(r"250 2.1.0 OK - smtpd-rs".to_string()));
 }
