@@ -5,7 +5,6 @@ use bufstream::BufStream;
 use std::io;
 use std::net::TcpListener;
 use std::thread::spawn;
-use std::time::Duration;
 use std::{thread, time};
 
 mod receiver;
