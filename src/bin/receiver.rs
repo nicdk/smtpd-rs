@@ -3,9 +3,10 @@ extern crate bufstream;
 
 use std::error::Error;
 use std::net::{TcpStream};
-use std::io;
-use std::io::{Write,BufRead,stderr};
+use std::io::{self, Write,BufRead,stderr};
 use bufstream::BufStream;
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs::OpenOptions;
 
 enum SmtpState {
     INIT,
@@ -278,6 +279,21 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                     stream.flush()?;
                 } else {
                     println!("write mail. {:?}", _mail);
+
+                    let start = SystemTime::now();
+                    let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+                    let _filename = format!("tests/Maildir/new/mail.{:?}", since_the_epoch);
+                    println!("filename {}", _filename);
+
+                    {
+                        let mut _file = OpenOptions::new()
+                            .read(true)
+                            .write(true)
+                            .create(true)
+                            .open(_filename).expect("file create");
+                        _file.write_all(&_mail.data.as_bytes()).unwrap();
+                    }
+
                     stream.write(format!("250 OK\n").as_bytes())?;
                     stream.flush()?;
                 }
