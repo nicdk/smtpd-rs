@@ -126,7 +126,16 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.flush()?;
 
                         _mail.mail_from = match line.trim().split_whitespace().nth(1) {
-                            Some(s) => String::from(s),
+                            Some(s) => {
+                                let _param = String::from(s);
+                                let (_from, _addr) = _param.split_at(5); // "FROM:" is 5
+                                println!("_from {}, _addr {}", _from, _addr);
+                                if _from.to_uppercase().to_string() != "FROM:" {
+                                    String::new()
+                                } else {
+                                    _addr.to_string()
+                                }
+                            },
                             None => String::new(),
                         };
                     }
@@ -177,7 +186,16 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.flush()?;
 
                         _mail.rcpt_to = match line.trim().split_whitespace().nth(1) {
-                            Some(s) => String::from(s),
+                            Some(s) => {
+                                let _param = String::from(s);
+                                let (_to, _addr) = _param.split_at(3); // "TO:" is 5
+                                println!("_to {}, _addr {}", _to, _addr);
+                                if _to.to_uppercase().to_string() != "TO:" {
+                                    String::new()
+                                } else {
+                                    _addr.to_string()
+                                }
+                            },
                             None => String::new(),
                         };
                     }
@@ -291,6 +309,8 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                             .write(true)
                             .create(true)
                             .open(_filename).expect("file create");
+                        _file.write_fmt(format_args!("Return-Path: {}\n", &_mail.mail_from)).unwrap();
+                        _file.write_fmt(format_args!("Delivered-To: {}\n", &_mail.rcpt_to)).unwrap();
                         _file.write_all(&_mail.data.as_bytes()).unwrap();
                     }
 
