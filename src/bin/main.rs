@@ -20,7 +20,7 @@ fn main() {
 fn smtpd(addr: &str) -> io::Result<()> {
     receiver::main();
     maildir::main();
-    
+
     spawn(move || {
         loop {
             maildir::scan().err();
@@ -48,11 +48,11 @@ fn smtpd(addr: &str) -> io::Result<()> {
             thread::sleep(time::Duration::from_millis(1000 * 10));
         }
     });
-    
+
     let listener = TcpListener::bind(addr)?;
     println!("smtpd-rs: listening on {}", addr);
     listener.set_ttl(100).expect("could not set TTL");
-    
+
     loop {
         let (stream, c_addr) = listener.accept()?;
         println!("connection received from {}", c_addr);

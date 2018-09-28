@@ -2,8 +2,8 @@ extern crate hostname;
 extern crate bufstream;
 
 use std::error::Error;
-use std::net::{TcpStream};
-use std::io::{self, Write,BufRead,stderr};
+use std::net::TcpStream;
+use std::io::{self, Write, BufRead, stderr};
 use bufstream::BufStream;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs::OpenOptions;
@@ -20,7 +20,7 @@ enum SmtpState {
 struct ReceiveMail {
     pub mail_from: String,
     pub rcpt_to: String,
-    pub data: String
+    pub data: String,
 }
 
 impl ReceiveMail {
@@ -28,7 +28,7 @@ impl ReceiveMail {
         ReceiveMail {
             mail_from: String::new(),
             rcpt_to: String::new(),
-            data: String::new()
+            data: String::new(),
         }
     }
 }
@@ -36,7 +36,7 @@ impl ReceiveMail {
 #[derive(Debug, PartialEq)]
 struct SmtpReply {
     pub code: u16,
-    pub message: String
+    pub message: String,
 }
 
 pub fn main() {
@@ -76,7 +76,6 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         let _message: &str = &_reply.message;
                         stream.write(&_message.as_bytes())?;
                         stream.flush()?;
-
                     }
                     None => {
                         /* abort. */
@@ -95,7 +94,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.write(b"disconnect.\n")?;
                         stream.flush()?;
                         panic!();
-                    },
+                    }
                     _ => SmtpState::INIT,
                 }
             }
@@ -135,7 +134,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                                 } else {
                                     _addr.to_string()
                                 }
-                            },
+                            }
                             None => String::new(),
                         };
                     }
@@ -155,7 +154,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.write(b"disconnect.\n")?;
                         stream.flush()?;
                         panic!();
-                    },
+                    }
                     _ => SmtpState::READY,
                 }
             }
@@ -195,7 +194,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                                 } else {
                                     _addr.to_string()
                                 }
-                            },
+                            }
                             None => String::new(),
                         };
                     }
@@ -215,7 +214,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.write(b"disconnect.\n")?;
                         stream.flush()?;
                         panic!();
-                    },
+                    }
                     _ => SmtpState::MAIL,
                 }
             }
@@ -244,7 +243,6 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         let _message: &str = &_reply.message;
                         stream.write(&_message.as_bytes())?;
                         stream.flush()?;
-
                     }
                     None => {
                         /* abort. */
@@ -262,7 +260,7 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                         stream.write(b"disconnect.\n")?;
                         stream.flush()?;
                         panic!();
-                    },
+                    }
                     _ => SmtpState::RCPT,
                 }
             }
@@ -277,7 +275,10 @@ pub fn handler(stream: &mut BufStream<TcpStream>) -> io::Result<()> {
                     println!("line {:?}", _l.trim());
 
                     if _l.trim().to_string() == "." { break; }
-                    if _l.trim().to_string() == ".."  { _data.push(".".to_string()); continue; }
+                    if _l.trim().to_string() == ".." {
+                        _data.push(".".to_string());
+                        continue;
+                    }
 
                     _data.push(_l);
                 }
@@ -336,21 +337,21 @@ fn dispatch(command: &String) -> Option<SmtpReply> {
             let reply;
             match param1 {
                 None => {
-                    reply = SmtpReply{
+                    reply = SmtpReply {
                         code: 555,
-                        message: format!("5.5.2 Syntax error. - smtpd-rs\n")
+                        message: format!("5.5.2 Syntax error. - smtpd-rs\n"),
                     }
                 }
                 Some(param1) => {
                     if command_split.next() != None {
-                        reply = SmtpReply{
+                        reply = SmtpReply {
                             code: 555,
-                            message: format!("5.5.2 Syntax error. - smtpd-rs\n")
+                            message: format!("5.5.2 Syntax error. - smtpd-rs\n"),
                         };
                     } else {
-                        reply = SmtpReply{
+                        reply = SmtpReply {
                             code: 250,
-                            message: format!("ok at your service {:?}\n", param1)
+                            message: format!("ok at your service {:?}\n", param1),
                         };
                     }
                 }
@@ -363,21 +364,21 @@ fn dispatch(command: &String) -> Option<SmtpReply> {
             let reply;
             match param1 {
                 None => {
-                    reply = SmtpReply{
+                    reply = SmtpReply {
                         code: 555,
-                        message: format!("5.5.2 Syntax error. - smtpd-rs\n")
+                        message: format!("5.5.2 Syntax error. - smtpd-rs\n"),
                     }
                 }
                 Some(param1) => {
                     if command_split.next() != None {
-                        reply = SmtpReply{
+                        reply = SmtpReply {
                             code: 555,
-                            message: format!("5.5.2 Syntax error. - smtpd-rs\n")
+                            message: format!("5.5.2 Syntax error. - smtpd-rs\n"),
                         };
                     } else {
-                        reply = SmtpReply{
+                        reply = SmtpReply {
                             code: 250,
-                            message: format!("ok at your service {:?}\n", param1)
+                            message: format!("ok at your service {:?}\n", param1),
                         };
                     }
                 }
@@ -387,60 +388,60 @@ fn dispatch(command: &String) -> Option<SmtpReply> {
         Some("MAIL") => {
             let from_address = command_split.next();
             println!("{:?}", from_address);
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 250,
-                message: format!("2.1.0 OK - smtpd-rs\n")
+                message: format!("2.1.0 OK - smtpd-rs\n"),
             };
             Some(reply)
         }
         Some("RCPT") => {
             let rcpt_address = command_split.next();
             println!("{:?}", rcpt_address);
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 250,
-                message: format!("2.1.0 OK - smtpd-rs\n")
+                message: format!("2.1.0 OK - smtpd-rs\n"),
             };
             Some(reply)
         }
         Some("DATA") => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 354,
-                message: format!("Start mail input; end with <CRLF>.<CRLF>\n")
+                message: format!("Start mail input; end with <CRLF>.<CRLF>\n"),
             };
             Some(reply)
         }
         Some("RSET") => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 250,
-                message: format!("2.1.0 OK - smtpd-rs\n")
+                message: format!("2.1.0 OK - smtpd-rs\n"),
             };
             Some(reply)
         }
         Some("NOOP") => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 250,
-                message: format!("2.1.0 OK - smtpd-rs\n")
+                message: format!("2.1.0 OK - smtpd-rs\n"),
             };
             Some(reply)
         }
         Some("QUIT") => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 221,
-                message: format!("Closing connection. Good bye.\n")
+                message: format!("Closing connection. Good bye.\n"),
             };
             Some(reply)
         }
         Some("VRFY") => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 250,
-                message: format!("2.1.0 OK - smtpd-rs\n")
+                message: format!("2.1.0 OK - smtpd-rs\n"),
             };
             Some(reply)
         }
         _ => {
-            let reply = SmtpReply{
+            let reply = SmtpReply {
                 code: 555,
-                message: format!(r"5.5.2 Syntax error. - smtpd-rs\n")
+                message: format!(r"5.5.2 Syntax error. - smtpd-rs\n"),
             };
             Some(reply)
         }
@@ -456,22 +457,21 @@ fn print_error(mut err: &Error) {
 }
 
 #[test]
-fn test_handler() {
-}
+fn test_handler() {}
 
 #[test]
 fn test_dispatch() {
-    assert_eq!(dispatch(&"EHLO localhost".to_string()), Some(SmtpReply{ code: 250, message: "ok at your service \"localhost\"\n".parse().unwrap() }));
-    assert_eq!(dispatch(&"HELO localhost".to_string()), Some(SmtpReply{ code: 250, message: "ok at your service \"localhost\"\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"EHLO localhost".to_string()), Some(SmtpReply { code: 250, message: "ok at your service \"localhost\"\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"HELO localhost".to_string()), Some(SmtpReply { code: 250, message: "ok at your service \"localhost\"\n".parse().unwrap() }));
 
-    assert_eq!(dispatch(&"MAIL FROM:postmaster@example.com".to_string()), Some(SmtpReply{ code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
-    assert_eq!(dispatch(&"RCPT TO:postmaster@example.com".to_string()),   Some(SmtpReply{ code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"MAIL FROM:postmaster@example.com".to_string()), Some(SmtpReply { code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"RCPT TO:postmaster@example.com".to_string()), Some(SmtpReply { code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
     assert_eq!(dispatch(&"DATA".to_string()), Some(SmtpReply { code: 354, message: "Start mail input; end with <CRLF>.<CRLF>\n".parse().unwrap() }));
 
-    assert_eq!(dispatch(&"RSET".to_string()), Some(SmtpReply{code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
-    assert_eq!(dispatch(&"NOOP".to_string()), Some(SmtpReply{code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
-    assert_eq!(dispatch(&"QUIT".to_string()), Some(SmtpReply{code: 221, message: "Closing connection. Good bye.\n".to_string() }));
-    assert_eq!(dispatch(&"VRFY".to_string()), Some(SmtpReply{code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"RSET".to_string()), Some(SmtpReply { code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"NOOP".to_string()), Some(SmtpReply { code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
+    assert_eq!(dispatch(&"QUIT".to_string()), Some(SmtpReply { code: 221, message: "Closing connection. Good bye.\n".to_string() }));
+    assert_eq!(dispatch(&"VRFY".to_string()), Some(SmtpReply { code: 250, message: "2.1.0 OK - smtpd-rs\n".parse().unwrap() }));
 
-    assert_eq!(dispatch(&"blahblahblah".to_string()), Some(SmtpReply{code: 555, message: r"5.5.2 Syntax error. - smtpd-rs\n".to_string() }));
+    assert_eq!(dispatch(&"blahblahblah".to_string()), Some(SmtpReply { code: 555, message: r"5.5.2 Syntax error. - smtpd-rs\n".to_string() }));
 }
